@@ -55,7 +55,7 @@ pub fn count_simd(s: &CStr) -> isize {
         let ns = window.simd_eq(n);
         let neg_ps = ps.to_int();
         let neg_ns = ns.to_int();
-        let pairwise = neg_ns.saturating_add(-neg_ps);
+        let pairwise = neg_ns - neg_ps;
 
         result += pairwise.reduce_sum() as isize;
     }
