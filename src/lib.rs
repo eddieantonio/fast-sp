@@ -21,8 +21,8 @@ pub fn count_iter(s: &CStr) -> isize {
     s.to_bytes()
         .iter()
         .map(|c| match c {
-            b'p' => 1,
-            b'n' => -1,
+            b's' => 1,
+            b'p' => -1,
             _ => 0,
         })
         .sum()
@@ -31,9 +31,9 @@ pub fn count_iter(s: &CStr) -> isize {
 pub fn count_for_loop(s: &CStr) -> isize {
     let mut result = 0;
     for &c in s.to_bytes() {
-        if c == b'p' {
+        if c == b's' {
             result += 1;
-        } else if c == b'n' {
+        } else if c == b'p' {
             result -= 1;
         }
     }
@@ -46,16 +46,16 @@ pub fn count_simd(s: &CStr) -> isize {
     let bytes = s.to_bytes();
     let (prefix, middle, suffix) = bytes.as_simd();
 
+    let s = u8x16::splat(b's');
     let p = u8x16::splat(b'p');
-    let n = u8x16::splat(b'n');
 
     let mut result = 0;
     for &window in middle {
+        let ss = window.simd_eq(s);
         let ps = window.simd_eq(p);
-        let ns = window.simd_eq(n);
+        let neg_ss = ss.to_int();
         let neg_ps = ps.to_int();
-        let neg_ns = ns.to_int();
-        let pairwise = neg_ns - neg_ps;
+        let pairwise = neg_ps - neg_ss;
 
         result += pairwise.reduce_sum() as isize;
     }
@@ -66,9 +66,9 @@ pub fn count_simd(s: &CStr) -> isize {
 fn _count_scalar(s: &[u8]) -> isize {
     let mut result = 0;
     for &c in s {
-        if c == b'p' {
+        if c == b's' {
             result += 1;
-        } else if c == b'n' {
+        } else if c == b'p' {
             result -= 1;
         }
     }
@@ -93,9 +93,9 @@ mod tests {
     use super::*;
     use std::ffi::CString;
 
-    const SMALL_SENTENCE: &str = "ppnpnpp";
+    const SMALL_SENTENCE: &str = "sspspss";
     const SMALL_SENTENCE_ANSWER: isize = 3;
-    const BIG_SENTENCE: &str = "pppppnpppnpppnn.npppnpnnnpnnnnpn";
+    const BIG_SENTENCE: &str = "ssssspssspssspp.pssspspppsppppsp";
     const BIG_SENTENCE_ANSWER: isize = 3;
 
     #[test]
@@ -112,7 +112,7 @@ mod tests {
 
     #[test]
     fn it_works_for_loop() {
-        let sentence = CString::new("ppnpnpp").unwrap();
+        let sentence = CString::new(SMALL_SENTENCE).unwrap();
         assert_eq!(SMALL_SENTENCE_ANSWER, count_for_loop(sentence.as_c_str()));
     }
 
@@ -124,7 +124,7 @@ mod tests {
 
     #[test]
     fn it_works_c() {
-        let sentence = CString::new("ppnpnpp").unwrap();
+        let sentence = CString::new(SMALL_SENTENCE).unwrap();
         assert_eq!(SMALL_SENTENCE_ANSWER, count_c(sentence.as_c_str()));
     }
 
@@ -136,7 +136,7 @@ mod tests {
 
     #[test]
     fn it_works_simd() {
-        let sentence = CString::new("ppnpnpp").unwrap();
+        let sentence = CString::new(SMALL_SENTENCE).unwrap();
         // will not actually use SIMD:
         assert_eq!(SMALL_SENTENCE_ANSWER, count_simd(sentence.as_c_str()));
     }

@@ -10,10 +10,10 @@ ssize_t count_c(const char *s) {
     ssize_t result = 0;
     while (*s != '\0') {
         switch (*s) {
-            case 'p':
+            case 's':
                 result += 1;
                 break;
-            case 'n':
+            case 'p':
                 result -= 1;
                 break;
         }
