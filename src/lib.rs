@@ -63,7 +63,7 @@ pub fn count_simd(s: &CStr) -> isize {
     _count_scalar(prefix) + result + _count_scalar(suffix)
 }
 
-pub fn _count_scalar(s: &[u8]) -> isize {
+fn _count_scalar(s: &[u8]) -> isize {
     let mut result = 0;
     for &c in s {
         if c == b'p' {
