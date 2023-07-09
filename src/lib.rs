@@ -151,11 +151,13 @@ mod tests {
 
     #[test]
     fn test_iter_and_simd_have_identical_results() {
-        let sentence = unsafe { CStr::from_ptr(data::RANDOM_SP.as_ptr() as *const i8) };
+        let sentence = CString::new(data::RANDOM_SP).unwrap();
+        let sentence = sentence.as_c_str();
         let len = count_iter(sentence);
         assert_eq!(len, count_simd(sentence));
 
-        let sentence = unsafe { CStr::from_ptr(data::RANDOM_PRINTABLE.as_ptr() as *const i8) };
+        let sentence = CString::new(data::RANDOM_PRINTABLE).unwrap();
+        let sentence = sentence.as_c_str();
         let len = count_iter(sentence);
         assert_eq!(len, count_simd(sentence));
     }
