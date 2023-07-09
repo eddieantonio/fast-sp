@@ -102,7 +102,7 @@ mod benches {
                 }
 
                 #[bench]
-                fn bench_printable_ascii(b: &mut Bencher) {
+                fn bench_random_printable(b: &mut Bencher) {
                     let buffer = CString::new(crate::data::RANDOM_PRINTABLE).unwrap();
                     let sentence = test::black_box(buffer.as_c_str());
 
