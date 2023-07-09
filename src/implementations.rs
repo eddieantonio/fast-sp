@@ -17,6 +17,8 @@ use std::ffi::CStr;
 use std::simd::{u8x16, SimdInt, SimdPartialEq};
 
 /// Counts using Rust iterators.
+///
+/// See assembly in Compiler Explorer: <https://godbolt.org/z/jja8PMqTr>
 pub fn count_iter(s: &CStr) -> isize {
     s.to_bytes()
         .iter()
@@ -29,6 +31,8 @@ pub fn count_iter(s: &CStr) -> isize {
 }
 
 /// Counts using an explicit for-loop with mutable state.
+///
+/// See assembly in Compiler Explorer: <https://godbolt.org/z/P1jGzroqY>
 pub fn count_for_loop(s: &CStr) -> isize {
     let mut result = 0;
     for &c in s.to_bytes() {
@@ -43,6 +47,8 @@ pub fn count_for_loop(s: &CStr) -> isize {
 }
 
 /// Counts using portable_simd.
+///
+/// See assembly in Compiler Explorer: <https://godbolt.org/z/vzjbojYna>
 pub fn count_simd(s: &CStr) -> isize {
     let bytes = s.to_bytes();
     let (prefix, middle, suffix) = bytes.as_simd();
