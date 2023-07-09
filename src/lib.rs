@@ -15,80 +15,10 @@
 
 #![feature(portable_simd)]
 
-use std::ffi::CStr;
-
 pub mod data;
+pub mod implementations;
 
-pub fn count_iter(s: &CStr) -> isize {
-    s.to_bytes()
-        .iter()
-        .map(|c| match c {
-            b's' => 1,
-            b'p' => -1,
-            _ => 0,
-        })
-        .sum()
-}
-
-pub fn count_for_loop(s: &CStr) -> isize {
-    let mut result = 0;
-    for &c in s.to_bytes() {
-        if c == b's' {
-            result += 1;
-        } else if c == b'p' {
-            result -= 1;
-        }
-    }
-
-    result
-}
-
-pub fn count_simd(s: &CStr) -> isize {
-    use std::simd::{u8x16, SimdInt, SimdPartialEq};
-    let bytes = s.to_bytes();
-    let (prefix, middle, suffix) = bytes.as_simd();
-
-    let s = u8x16::splat(b's');
-    let p = u8x16::splat(b'p');
-
-    let mut result = 0;
-    for &window in middle {
-        let ss = window.simd_eq(s);
-        let ps = window.simd_eq(p);
-        let neg_ss = ss.to_int();
-        let neg_ps = ps.to_int();
-        let pairwise = neg_ps - neg_ss;
-
-        result += pairwise.reduce_sum() as isize;
-    }
-
-    _count_scalar(prefix) + result + _count_scalar(suffix)
-}
-
-fn _count_scalar(s: &[u8]) -> isize {
-    let mut result = 0;
-    for &c in s {
-        if c == b's' {
-            result += 1;
-        } else if c == b'p' {
-            result -= 1;
-        }
-    }
-
-    result
-}
-
-mod internal {
-    #[link(name = "count")]
-    extern "C" {
-        pub(crate) fn count_c(s: *const i8) -> isize;
-    }
-}
-
-#[inline(always)]
-pub fn count_c(s: &CStr) -> isize {
-    unsafe { internal::count_c(s.as_ptr()) }
-}
+pub use implementations::*;
 
 #[cfg(test)]
 mod tests {
