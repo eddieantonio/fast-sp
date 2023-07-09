@@ -14,6 +14,9 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #![feature(portable_simd)]
+#![feature(test)]
+
+extern crate test;
 
 pub mod data;
 pub mod implementations;
@@ -23,6 +26,7 @@ pub use implementations::*;
 #[cfg(test)]
 mod tests {
     use super::*;
+
     use std::ffi::CString;
 
     macro_rules! test_implementation {
@@ -77,4 +81,38 @@ mod tests {
         assert_eq!(count_from_iter, count_c(sentence));
         assert_eq!(count_from_iter, count_simd(sentence));
     }
+}
+
+#[cfg(test)]
+mod benches {
+    macro_rules! bench_implementation {
+        ($implementation: ident) => {
+            mod $implementation {
+
+                use std::ffi::CString;
+                use test::Bencher;
+
+                #[bench]
+                fn bench_random_sp(b: &mut Bencher) {
+                    let buffer = CString::new(crate::data::RANDOM_SP).unwrap();
+                    let sentence = test::black_box(buffer.as_c_str());
+
+                    b.iter(|| crate::implementations::$implementation(sentence));
+                }
+
+                #[bench]
+                fn bench_printable_ascii(b: &mut Bencher) {
+                    let buffer = CString::new(crate::data::RANDOM_PRINTABLE).unwrap();
+                    let sentence = test::black_box(buffer.as_c_str());
+
+                    b.iter(|| crate::implementations::$implementation(sentence));
+                }
+            }
+        };
+    }
+
+    bench_implementation!(count_iter);
+    bench_implementation!(count_for_loop);
+    bench_implementation!(count_c);
+    bench_implementation!(count_simd);
 }
