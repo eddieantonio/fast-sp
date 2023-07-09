@@ -1,2 +1,6 @@
+# Rust stuff
 /target
 /Cargo.lock
+
+# Python stuff
+/.venv/
