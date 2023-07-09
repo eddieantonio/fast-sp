@@ -53,3 +53,24 @@ int run_switches(char *input) {
     }
   }
 }
+
+/**
+ * See assembly in Compiler Explorer: <https://godbolt.org/z/W3jchbsab>
+ */
+int count_c_owen_sized(const char *input, size_t n) {
+  int res = 0;
+  for (size_t i = 0; i < n; i++) {
+    char c = input[i];
+    switch (c) {
+      case 's':
+        res += 1;
+        break;
+      case 'p':
+        res -= 1;
+        break;
+      default:
+        break;
+    }
+  }
+  return res;
+}

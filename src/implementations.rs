@@ -116,3 +116,20 @@ pub fn count_c_owen(s: &CStr) -> isize {
 
     unsafe { run_switches(s.as_ptr()) as isize }
 }
+
+/// Owen's implementation, with explicit size (does not check for null terminator).
+#[inline(always)]
+pub fn count_c_owen_sized(s: &CStr) -> isize {
+    // Tiny wrapper that changes Rust's borrowed CStr and converts it into C's const char*.
+    use std::ffi::c_char;
+
+    // This will link to libcount.a and use its count_c function.
+    // The scope of this external symbol is entirely internal to this function.
+    #[link(name = "count", kind = "static")]
+    extern "C" {
+        fn count_c_owen_sized(s: *const c_char, n: usize) -> i32;
+    }
+
+    let s = s.to_bytes();
+    unsafe { count_c_owen_sized(s.as_ptr() as *const c_char, s.len()) as isize }
+}
