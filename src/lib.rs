@@ -25,70 +25,56 @@ mod tests {
     use super::*;
     use std::ffi::CString;
 
-    const SMALL_SENTENCE: &str = "sspspss";
-    const SMALL_SENTENCE_ANSWER: isize = 3;
-    const BIG_SENTENCE: &str = "ssssspssspssspp.pssspspppsppppsp";
-    const BIG_SENTENCE_ANSWER: isize = 3;
+    macro_rules! test_implementation {
+        ($implementation: ident) => {
+            mod $implementation {
+                use std::ffi::CString;
+
+                #[test]
+                fn test_small_sentence() {
+                    let sentence = CString::new("sspspss").unwrap();
+                    assert_eq!(
+                        3,
+                        crate::implementations::$implementation(sentence.as_c_str())
+                    );
+                }
+
+                #[test]
+                fn test_big_sentence() {
+                    let sentence = CString::new("ssssspssspssspp.pssspspppsppppsp").unwrap();
+                    assert_eq!(
+                        3,
+                        crate::implementations::$implementation(sentence.as_c_str())
+                    );
+                }
+            }
+        };
+    }
+
+    test_implementation!(count_iter);
+    test_implementation!(count_for_loop);
+    test_implementation!(count_c);
+    test_implementation!(count_simd);
 
     #[test]
-    fn it_works_iter() {
-        let sentence = CString::new(SMALL_SENTENCE).unwrap();
-        assert_eq!(SMALL_SENTENCE_ANSWER, count_iter(sentence.as_c_str()));
+    fn test_implementations_have_identical_results_only_sp() {
+        let buffer = CString::new(data::RANDOM_SP).unwrap();
+        let sentence = buffer.as_c_str();
+        let count_from_iter = count_for_loop(sentence);
+
+        assert_eq!(count_from_iter, count_iter(sentence));
+        assert_eq!(count_from_iter, count_c(sentence));
+        assert_eq!(count_from_iter, count_simd(sentence));
     }
 
     #[test]
-    fn it_works_iter_big() {
-        let sentence = CString::new(BIG_SENTENCE).unwrap();
-        assert_eq!(BIG_SENTENCE_ANSWER, count_iter(sentence.as_c_str()));
-    }
-
-    #[test]
-    fn it_works_for_loop() {
-        let sentence = CString::new(SMALL_SENTENCE).unwrap();
-        assert_eq!(SMALL_SENTENCE_ANSWER, count_for_loop(sentence.as_c_str()));
-    }
-
-    #[test]
-    fn it_works_for_loop_big() {
-        let sentence = CString::new(BIG_SENTENCE).unwrap();
-        assert_eq!(BIG_SENTENCE_ANSWER, count_for_loop(sentence.as_c_str()));
-    }
-
-    #[test]
-    fn it_works_c() {
-        let sentence = CString::new(SMALL_SENTENCE).unwrap();
-        assert_eq!(SMALL_SENTENCE_ANSWER, count_c(sentence.as_c_str()));
-    }
-
-    #[test]
-    fn it_works_c_big() {
-        let sentence = CString::new(BIG_SENTENCE).unwrap();
-        assert_eq!(BIG_SENTENCE_ANSWER, count_c(sentence.as_c_str()));
-    }
-
-    #[test]
-    fn it_works_simd() {
-        let sentence = CString::new(SMALL_SENTENCE).unwrap();
-        // will not actually use SIMD:
-        assert_eq!(SMALL_SENTENCE_ANSWER, count_simd(sentence.as_c_str()));
-    }
-
-    #[test]
-    fn it_works_simd_big() {
-        let sentence = CString::new(BIG_SENTENCE).unwrap();
-        assert_eq!(BIG_SENTENCE_ANSWER, count_simd(sentence.as_c_str()));
-    }
-
-    #[test]
-    fn test_iter_and_simd_have_identical_results() {
-        let sentence = CString::new(data::RANDOM_SP).unwrap();
-        let sentence = sentence.as_c_str();
-        let len = count_iter(sentence);
-        assert_eq!(len, count_simd(sentence));
-
+    fn test_implementations_have_identical_results_any_printable() {
         let sentence = CString::new(data::RANDOM_PRINTABLE).unwrap();
         let sentence = sentence.as_c_str();
-        let len = count_iter(sentence);
-        assert_eq!(len, count_simd(sentence));
+        let count_from_iter = count_for_loop(sentence);
+
+        assert_eq!(count_from_iter, count_iter(sentence));
+        assert_eq!(count_from_iter, count_c(sentence));
+        assert_eq!(count_from_iter, count_simd(sentence));
     }
 }
