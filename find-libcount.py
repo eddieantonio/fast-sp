@@ -34,7 +34,7 @@ if len(options) == 0:
     sys.exit(1)
 
 if len(options) > 1:
-    print("too many options for libcount.a: {options}", file=sys.stderr)
+    print(f"too many options for libcount.a: {options}", file=sys.stderr)
     sys.exit(1)
 
 # Print the only option!
