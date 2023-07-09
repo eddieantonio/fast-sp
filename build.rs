@@ -23,7 +23,14 @@ fn main() {
 
 fn compile_c_library() {
     let source = "src/count.c";
-    cc::Build::new().file(source).compile("libcount.a");
+    cc::Build::new()
+        .file(source)
+        .flag(if cfg!(all(target_os = "macos", target_arch = "aarch64")) {
+            "-mcpu=apple-m1"
+        } else {
+            "-march=native"
+        })
+        .compile("libcount.a");
     println!("cargo:rerun-if-changed={source}");
 }
 

@@ -59,6 +59,7 @@ mod tests {
     test_implementation!(count_for_loop);
     test_implementation!(count_c);
     test_implementation!(count_simd);
+    test_implementation!(count_c_owen);
 
     #[test]
     fn test_implementations_have_identical_results_only_sp() {
@@ -115,4 +116,5 @@ mod benches {
     bench_implementation!(count_for_loop);
     bench_implementation!(count_c);
     bench_implementation!(count_simd);
+    bench_implementation!(count_c_owen);
 }
