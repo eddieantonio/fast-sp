@@ -1,6 +1,15 @@
 """
-Generate test data.
+generate-test-data.py - creates random test data, quickly
+
+SYNOPSIS
+    python3 generate-test-data.py [-C directory]
+
+OPTIONS
+    -C directory      if specifed, changes into this directory before executing
 """
+
+import os
+import sys
 
 import numpy as np  # type: ignore
 
@@ -26,8 +35,14 @@ def random_ascii_printable():
     )
 
 
-with open("random-printable.bin", "wb") as data_file:
-    random_ascii_printable().tofile(data_file)
+if __name__ == "__main__":
+    # Change directory, if specified:
+    if flag_index := sys.argv.index("-C"):
+        directory = sys.argv[flag_index + 1]
+        os.chdir(directory)
 
-with open("random-sp.bin", "wb") as data_file:
-    random_sp().tofile(data_file)
+    with open("random-printable.bin", "wb") as data_file:
+        random_ascii_printable().tofile(data_file)
+
+    with open("random-sp.bin", "wb") as data_file:
+        random_sp().tofile(data_file)
