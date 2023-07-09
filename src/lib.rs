@@ -17,6 +17,8 @@
 
 use std::ffi::CStr;
 
+pub mod data;
+
 pub fn count_iter(s: &CStr) -> isize {
     s.to_bytes()
         .iter()
@@ -145,5 +147,16 @@ mod tests {
     fn it_works_simd_big() {
         let sentence = CString::new(BIG_SENTENCE).unwrap();
         assert_eq!(BIG_SENTENCE_ANSWER, count_simd(sentence.as_c_str()));
+    }
+
+    #[test]
+    fn test_iter_and_simd_have_identical_results() {
+        let sentence = unsafe { CStr::from_ptr(data::RANDOM_SP.as_ptr() as *const i8) };
+        let len = count_iter(sentence);
+        assert_eq!(len, count_simd(sentence));
+
+        let sentence = unsafe { CStr::from_ptr(data::RANDOM_PRINTABLE.as_ptr() as *const i8) };
+        let len = count_iter(sentence);
+        assert_eq!(len, count_simd(sentence));
     }
 }
