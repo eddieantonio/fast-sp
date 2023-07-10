@@ -10,7 +10,7 @@ static_assert(sizeof(int) == 4, "Cannot assume that C's int is i32 in Rust");
  * optimization passes) would produce more or less identical code for both
  * implementations.
  *
- * See assembly on Compiler Explorer: <https://godbolt.org/z/4cEqo1vbe>
+ * See assembly on Compiler Explorer: <https://godbolt.org/z/f7ve6K5sn>
  */
 int64_t count_c(const char *s) {
     int64_t result = 0;
@@ -55,7 +55,7 @@ int run_switches(char *input) {
 }
 
 /**
- * See assembly in Compiler Explorer: <https://godbolt.org/z/W3jchbsab>
+ * See assembly in Compiler Explorer: <https://godbolt.org/z/aPGWTW8WP>
  */
 int count_c_owen_sized(const char *input, size_t n) {
   int res = 0;

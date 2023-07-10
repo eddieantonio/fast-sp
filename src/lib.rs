@@ -61,6 +61,7 @@ mod tests {
     test_implementation!(count_simd);
     test_implementation!(count_c_owen);
     test_implementation!(count_c_owen_sized);
+    test_implementation!(emulate_numpy);
 
     #[test]
     fn test_implementations_have_identical_results_only_sp() {
@@ -71,6 +72,7 @@ mod tests {
         assert_eq!(count_from_iter, count_iter(sentence));
         assert_eq!(count_from_iter, count_c(sentence));
         assert_eq!(count_from_iter, count_simd(sentence));
+        assert_eq!(count_from_iter, emulate_numpy(sentence));
     }
 
     #[test]
@@ -82,6 +84,7 @@ mod tests {
         assert_eq!(count_from_iter, count_iter(sentence));
         assert_eq!(count_from_iter, count_c(sentence));
         assert_eq!(count_from_iter, count_simd(sentence));
+        assert_eq!(count_from_iter, emulate_numpy(sentence));
     }
 }
 
@@ -113,10 +116,11 @@ mod benches {
         };
     }
 
-    bench_implementation!(count_iter);
-    bench_implementation!(count_for_loop);
-    bench_implementation!(count_c);
+    //bench_implementation!(count_iter);
+    //bench_implementation!(count_for_loop);
+    //bench_implementation!(count_c);
     bench_implementation!(count_simd);
-    bench_implementation!(count_c_owen);
-    bench_implementation!(count_c_owen_sized);
+    //bench_implementation!(count_c_owen);
+    //bench_implementation!(count_c_owen_sized);
+    bench_implementation!(emulate_numpy);
 }
