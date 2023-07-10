@@ -14,7 +14,6 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 use std::ffi::CStr;
-use std::mem::size_of;
 use std::simd::{u8x16, SimdInt, SimdPartialEq};
 
 /// Counts using Rust iterators.
@@ -105,31 +104,46 @@ pub fn vec_eq(s: &[u8], value: u8) -> Vec<bool> {
 
 #[inline(never)]
 pub fn nonzeros(s: &[bool]) -> usize {
-    let n_chunks = s.len() / size_of::<u64>();
-    let n_bytes = n_chunks * size_of::<u64>();
-    let remainder = &s[n_bytes..];
+    use std::simd::i8x16;
 
-    // This is terrible, and I should be fired for writing this.
-    // I don't have a job, but I should be fired anyway.
-    let chunks = unsafe { std::slice::from_raw_parts(s.as_ptr() as *const u64, n_chunks) };
+    let s = unsafe { std::mem::transmute::<&[bool], &[u8]>(s) };
+    let n_lanes = 16;
+    let n_chunks = s.len() / n_lanes;
+    let n_fast_bytes = n_chunks * n_lanes;
+    let remainder = &s[n_fast_bytes..];
 
-    //let n_trues_in_chunks = chunks
-    //    .iter()
-    //    .copied()
-    //    .map(|chunk| chunk.count_ones() as usize)
-    //    .sum::<usize>();
-    let mut n_trues_in_chunks = 0;
-    for &chunk in chunks {
-        n_trues_in_chunks += chunk.count_ones() as usize;
+    let one = u8x16::splat(1);
+    let zero = i8x16::splat(0);
+
+    let mut partial_sums = zero;
+    let mut result = 0;
+    let mut adds = 0;
+    let max_adds = 128;
+    for chunk in s.chunks_exact(n_lanes) {
+        let chunk = u8x16::from_slice(chunk);
+        partial_sums += chunk.simd_eq(one).to_int();
+
+        if adds == max_adds {
+            // our partial sums will overflow, so add it all into a vector
+            result += (-partial_sums.reduce_sum()) as usize;
+            partial_sums = zero;
+            adds = 0;
+        } else {
+            adds += 1;
+        }
     }
-    assert!(remainder.len() < size_of::<u64>());
-    //let n_trues_in_remainder = remainder.iter().copied().map(|b| b as usize).sum::<usize>();
-    let mut n_trues_in_remainder = 0;
-    for &x in remainder {
-        n_trues_in_remainder += if x { 1 } else { 0 }
+
+    if adds > 0 {
+        result += (-partial_sums.reduce_sum()) as usize;
     }
 
-    n_trues_in_chunks + n_trues_in_remainder
+    for &b in remainder {
+        if b > 0 {
+            result += 1;
+        }
+    }
+
+    result
 }
 
 /// Count implementation written in C. See src/count.c
