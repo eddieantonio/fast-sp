@@ -14,6 +14,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 use std::ffi::CStr;
+use std::mem::size_of;
 use std::simd::{u8x16, SimdInt, SimdPartialEq};
 
 /// Counts using Rust iterators.
@@ -104,25 +105,31 @@ pub fn vec_eq(s: &[u8], value: u8) -> Vec<bool> {
 
 #[inline(never)]
 pub fn nonzeros(s: &[bool]) -> usize {
-    // forgive me
-    let s = unsafe { std::mem::transmute::<&[bool], &[u8]>(s) };
-    let mut chunks = s.chunks_exact(32);
-    let mut result = 0;
+    let n_chunks = s.len() / size_of::<u64>();
+    let n_bytes = n_chunks * size_of::<u64>();
+    let remainder = &s[n_bytes..];
 
-    for chunk in chunks.by_ref() {
-        let partial_sum: u8 = chunk.iter().sum();
-        result += partial_sum as usize;
+    // This is terrible, and I should be fired for writing this.
+    // I don't have a job, but I should be fired anyway.
+    let chunks = unsafe { std::slice::from_raw_parts(s.as_ptr() as *const u64, n_chunks) };
+
+    //let n_trues_in_chunks = chunks
+    //    .iter()
+    //    .copied()
+    //    .map(|chunk| chunk.count_ones() as usize)
+    //    .sum::<usize>();
+    let mut n_trues_in_chunks = 0;
+    for &chunk in chunks {
+        n_trues_in_chunks += chunk.count_ones() as usize;
+    }
+    assert!(remainder.len() < size_of::<u64>());
+    //let n_trues_in_remainder = remainder.iter().copied().map(|b| b as usize).sum::<usize>();
+    let mut n_trues_in_remainder = 0;
+    for &x in remainder {
+        n_trues_in_remainder += if x { 1 } else { 0 }
     }
 
-    let remainder = chunks.remainder();
-    assert!(remainder.len() < 32);
-    for &b in remainder {
-        if b > 0 {
-            result += 1
-        }
-    }
-
-    result
+    n_trues_in_chunks + n_trues_in_remainder
 }
 
 /// Count implementation written in C. See src/count.c
