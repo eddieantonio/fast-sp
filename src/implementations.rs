@@ -104,46 +104,7 @@ pub fn vec_eq(s: &[u8], value: u8) -> Vec<bool> {
 
 #[inline(never)]
 pub fn nonzeros(s: &[bool]) -> usize {
-    use std::simd::i8x16;
-
-    let s = unsafe { std::mem::transmute::<&[bool], &[u8]>(s) };
-    let n_lanes = 16;
-    let n_chunks = s.len() / n_lanes;
-    let n_fast_bytes = n_chunks * n_lanes;
-    let remainder = &s[n_fast_bytes..];
-
-    let one = u8x16::splat(1);
-    let zero = i8x16::splat(0);
-
-    let mut partial_sums = zero;
-    let mut result = 0;
-    let mut adds = 0;
-    let max_adds = 128;
-    for chunk in s.chunks_exact(n_lanes) {
-        let chunk = u8x16::from_slice(chunk);
-        partial_sums += chunk.simd_eq(one).to_int();
-
-        if adds == max_adds {
-            // our partial sums will overflow, so add it all into a vector
-            result += (-partial_sums.reduce_sum()) as usize;
-            partial_sums = zero;
-            adds = 0;
-        } else {
-            adds += 1;
-        }
-    }
-
-    if adds > 0 {
-        result += (-partial_sums.reduce_sum()) as usize;
-    }
-
-    for &b in remainder {
-        if b > 0 {
-            result += 1;
-        }
-    }
-
-    result
+    s.iter().map(|&b| b as usize).sum()
 }
 
 /// Count implementation written in C. See src/count.c
