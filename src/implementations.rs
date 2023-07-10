@@ -89,10 +89,10 @@ pub fn emulate_numpy(s: &CStr) -> isize {
     let bytes = s.to_bytes();
 
     let ps = vec_eq(bytes, b'p');
-    let num_ps = count_nonzero(&ps);
+    let num_ps = nonzeros(&ps) as isize;
 
     let ss = vec_eq(bytes, b's');
-    let num_ss = count_nonzero(&ss);
+    let num_ss = nonzeros(&ss) as isize;
 
     num_ss - num_ps
 }
@@ -103,26 +103,23 @@ pub fn vec_eq(s: &[u8], value: u8) -> Vec<bool> {
 }
 
 #[inline(never)]
-pub fn count_nonzero(s: &[bool]) -> isize {
-    use std::simd::SimdPartialOrd;
-
+pub fn nonzeros(s: &[bool]) -> usize {
+    // forgive me
     let s = unsafe { std::mem::transmute::<&[bool], &[u8]>(s) };
-    let (prefix, middle, suffix) = s.as_simd();
-
-    let zero = u8x16::splat(0);
-
+    let mut chunks = s.chunks_exact(32);
     let mut result = 0;
-    for b in prefix.iter().copied() {
-        result += b as isize
+
+    for chunk in chunks.by_ref() {
+        let partial_sum: u8 = chunk.iter().sum();
+        result += partial_sum as usize;
     }
 
-    for &window in middle {
-        let neg = window.simd_gt(zero).to_int();
-        result -= neg.reduce_sum() as isize;
-    }
-
-    for b in suffix.iter().copied() {
-        result += b as isize
+    let remainder = chunks.remainder();
+    assert!(remainder.len() < 32);
+    for &b in remainder {
+        if b > 0 {
+            result += 1
+        }
     }
 
     result
