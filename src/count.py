@@ -13,7 +13,11 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from pathlib import Path
+
 import numpy as np  # type: ignore
+
+HERE = Path(__file__).parent.resolve()
 
 
 def naive_for_loop(array):
@@ -32,28 +36,33 @@ def clever_numpy_trickery(array):
     return num_s - num_p
 
 
-def benchmark() -> None:
-    import timeit
-    from itertools import product
-    from pathlib import Path
-    from statistics import median
+def just_finding_index(array):
+    return array == b"s"
 
+
+def load_test_data(name: str):
     # Load test data.
     # The test data will have been placed in target/release/build/<SOMETHING>/out
     # <SOMETHING> is determined by cargo, so it's easier just to try to glob for
     # something matching the expected filename.
-    here = Path(__file__).parent.resolve()
-    builds_dir = here.parent / "target" / "release" / "build"
+    builds_dir = HERE.parent / "target" / "release" / "build"
     assert builds_dir.is_dir()
-    (random_printable_path,) = builds_dir.glob("**/random-printable.bin")
-    (random_sp_path,) = builds_dir.glob("**/random-sp.bin")
+    (path,) = builds_dir.glob(f"**/{name}")
+    return np.fromfile(path, dtype=np.uint8)
 
-    random_printable = np.fromfile(random_printable_path, dtype=np.uint8)
-    random_sp = np.fromfile(random_sp_path, dtype=np.uint8)
+
+def benchmark() -> None:
+    import timeit
+    from itertools import product
+    from statistics import median
+
+    random_printable = load_test_data("random-printable.bin")
+    random_sp = load_test_data("random-sp.bin")
 
     def time(stmt: str, **kwargs):
         timer = timeit.Timer(stmt=stmt, **kwargs)
-        k, _ = timer.autorange()
+        # k, _ = timer.autorange()
+        k = 1
         raw_vector = timer.repeat(number=k)
         vector = [sec_per_k_iters * 10**9 / k for sec_per_k_iters in raw_vector]
         return k, vector, raw_vector
@@ -64,7 +73,11 @@ def benchmark() -> None:
     # fns = ["clever_numpy_trickery"]
     # test_cases = ["random_printable"]
 
-    fns = ["naive_for_loop", "clever_numpy_trickery"]
+    fns = [
+        # "naive_for_loop",
+        "clever_numpy_trickery",
+        "just_finding_index",
+    ]
     test_cases = ["random_printable", "random_sp"]
 
     for fn, test_case in product(fns, test_cases):
