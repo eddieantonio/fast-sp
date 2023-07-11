@@ -104,7 +104,7 @@ pub fn vec_eq(s: &[u8], value: u8) -> Vec<bool> {
 
 #[inline(never)]
 pub fn vec_eq_simd(input: &[u8], value: u8) -> Vec<bool> {
-    const N: usize = 16;
+    const N: usize = 32;
 
     let mut buffer = Vec::<bool>::with_capacity(input.len());
 
