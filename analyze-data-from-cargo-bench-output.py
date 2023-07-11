@@ -126,7 +126,7 @@ def nullify_test_case_size_conditionally(df):
 
 ######################################### Main #########################################
 
-rows = list(parse(fileinput.input(encoding="UTF-8")))
+rows = parse(fileinput.input(encoding="UTF-8"))
 
 benchmarks = (
     pd.DataFrame(rows, columns=["implementation", "test_case", "mean_ns", "stddev_ns"])
@@ -169,19 +169,20 @@ presentable = (
     .reset_index()
     .pipe(with_escaped_markdown)
     .pipe(with_preformatted_time)
-)
-
-
-print(
-    presentable[
-        [
+    .filter(
+        items=[
             "language",
             "name",
             "test_case",
             "gigabytes_per_second",
             "time",
         ]
-    ].to_markdown(
+    )
+)
+
+
+print(
+    presentable.to_markdown(
         headers=[
             "Language",
             "Implementation",
