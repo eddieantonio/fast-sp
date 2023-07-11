@@ -139,12 +139,43 @@ mod benches {
 
     //bench_implementation!(count_iter);
     //bench_implementation!(count_for_loop);
-    bench_implementation!(count_c);
+    //bench_implementation!(count_c);
     bench_implementation!(count_simd);
     //bench_implementation!(count_c_owen);
     //bench_implementation!(count_c_owen_sized);
     //bench_implementation!(emulate_numpy);
+
+    bench_vec_eq_implementation!(vec_eq);
     bench_vec_eq_implementation!(vec_eq_simd);
+    bench_vec_eq_implementation!(vec_eq_do_nothing_but_allocate);
+    bench_vec_eq_implementation!(vec_eq_only_prefix);
+    mod vec_eq_only_simd {
+        use crate::implementations::vec_eq_only_simd;
+        use test::Bencher;
+
+        #[bench]
+        fn bench_random_sp(b: &mut Bencher) {
+            let input = crate::data::RANDOM_SP.as_bytes();
+            let value = b's';
+
+            const N: usize = 32;
+            let mut buffer = Vec::<bool>::with_capacity(input.len());
+
+            let n_initial_bytes = input.len() % N;
+            unsafe {
+                // Pretend the buffer is large enough. UB be here:
+                buffer.set_len(input.len());
+            }
+
+            b.iter(|| {
+                vec_eq_only_simd(
+                    test::black_box(&input[n_initial_bytes..]),
+                    &mut buffer[n_initial_bytes..],
+                    value,
+                )
+            });
+        }
+    }
 
     mod nonzero {
         use crate::implementations::{nonzeros, vec_eq};

@@ -127,6 +127,10 @@ pub fn vec_eq_simd(input: &[u8], value: u8) -> Vec<bool> {
     buffer
 }
 
+pub fn vec_eq_only_simd(input: &[u8], buffer: &mut [bool], value: u8) {
+    _vec_eq_fast::<32>(input, buffer, value)
+}
+
 #[inline]
 fn _vec_eq_fast<const N: usize>(input: &[u8], buffer: &mut [bool], value: u8)
 where
@@ -145,6 +149,28 @@ where
         let result = input_chunk.simd_eq(value).to_int() & one;
         result.copy_to_slice(output_chunk);
     }
+}
+
+#[allow(clippy::uninit_vec)]
+pub fn vec_eq_do_nothing_but_allocate(input: &[u8], _value: u8) -> Vec<bool> {
+    let mut buffer = Vec::<bool>::with_capacity(input.len());
+
+    unsafe {
+        // Pretend the buffer is large enough. UB be here:
+        buffer.set_len(input.len());
+    }
+    buffer
+}
+
+pub fn vec_eq_only_prefix(input: &[u8], value: u8) -> Vec<bool> {
+    const N: usize = 32;
+    let mut buffer = Vec::<bool>::with_capacity(input.len());
+    let n_initial_bytes = input.len() % N;
+    for &byte in &input[..n_initial_bytes] {
+        buffer.push(byte == value);
+    }
+
+    buffer
 }
 
 #[inline(never)]
