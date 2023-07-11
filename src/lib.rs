@@ -55,32 +55,36 @@ mod tests {
         };
     }
 
-    test_implementation!(count_iter);
-    test_implementation!(count_for_loop);
-    test_implementation!(count_c);
-    test_implementation!(count_simd);
-    test_implementation!(count_c_owen);
+    test_implementation!(c_original);
+    test_implementation!(c_for_loop);
+    test_implementation!(c_while_loop);
+    test_implementation!(rust_emulate_numpy);
+    test_implementation!(rust_for_loop);
+    test_implementation!(rust_iter);
+    test_implementation!(rust_portable_simd);
 
     #[test]
     fn test_implementations_have_identical_results_only_sp() {
         let buffer = CString::new(data::RANDOM_SP).unwrap();
         let sentence = buffer.as_c_str();
-        let count_from_iter = count_for_loop(sentence);
+        let count_from_iter = rust_for_loop(sentence);
 
-        assert_eq!(count_from_iter, count_iter(sentence));
-        assert_eq!(count_from_iter, count_c(sentence));
-        assert_eq!(count_from_iter, count_simd(sentence));
+        assert_eq!(count_from_iter, rust_iter(sentence));
+        assert_eq!(count_from_iter, rust_portable_simd(sentence));
+        assert_eq!(count_from_iter, c_while_loop(sentence));
+        assert_eq!(count_from_iter, rust_emulate_numpy(sentence));
     }
 
     #[test]
     fn test_implementations_have_identical_results_any_printable() {
         let sentence = CString::new(data::RANDOM_PRINTABLE).unwrap();
         let sentence = sentence.as_c_str();
-        let count_from_iter = count_for_loop(sentence);
+        let count_from_iter = rust_for_loop(sentence);
 
-        assert_eq!(count_from_iter, count_iter(sentence));
-        assert_eq!(count_from_iter, count_c(sentence));
-        assert_eq!(count_from_iter, count_simd(sentence));
+        assert_eq!(count_from_iter, rust_iter(sentence));
+        assert_eq!(count_from_iter, rust_portable_simd(sentence));
+        assert_eq!(count_from_iter, c_while_loop(sentence));
+        assert_eq!(count_from_iter, rust_emulate_numpy(sentence));
     }
 }
 
@@ -112,9 +116,84 @@ mod benches {
         };
     }
 
-    bench_implementation!(count_iter);
-    bench_implementation!(count_for_loop);
-    bench_implementation!(count_c);
-    bench_implementation!(count_simd);
-    bench_implementation!(count_c_owen);
+    macro_rules! bench_vec_eq_implementation {
+        ($implementation: ident) => {
+            mod $implementation {
+
+                use test::Bencher;
+
+                #[bench]
+                fn bench_random_sp(b: &mut Bencher) {
+                    let sentence = test::black_box(crate::data::RANDOM_SP.as_bytes());
+                    b.iter(|| crate::implementations::$implementation(sentence, b's'));
+                }
+
+                #[bench]
+                fn bench_random_printable(b: &mut Bencher) {
+                    let sentence = test::black_box(crate::data::RANDOM_PRINTABLE.as_bytes());
+                    b.iter(|| crate::implementations::$implementation(sentence, b's'));
+                }
+            }
+        };
+    }
+
+    bench_implementation!(c_original);
+    bench_implementation!(c_for_loop);
+    bench_implementation!(c_while_loop);
+    bench_implementation!(rust_emulate_numpy);
+    bench_implementation!(rust_for_loop);
+    bench_implementation!(rust_iter);
+    bench_implementation!(rust_portable_simd);
+
+    bench_vec_eq_implementation!(vec_eq);
+    bench_vec_eq_implementation!(vec_eq_simd);
+    bench_vec_eq_implementation!(vec_eq_do_nothing_but_allocate);
+    bench_vec_eq_implementation!(vec_eq_only_prefix);
+
+    mod vec_eq_only_simd {
+        use crate::implementations::vec_eq_only_simd;
+        use test::Bencher;
+
+        #[bench]
+        fn bench_random_sp(b: &mut Bencher) {
+            let input = crate::data::RANDOM_SP.as_bytes();
+            let value = b's';
+
+            const N: usize = 32;
+            let mut buffer = Vec::<bool>::with_capacity(input.len());
+
+            let n_initial_bytes = input.len() % N;
+            unsafe {
+                // Pretend the buffer is large enough. UB be here:
+                buffer.set_len(input.len());
+            }
+
+            b.iter(|| {
+                vec_eq_only_simd(
+                    test::black_box(&input[n_initial_bytes..]),
+                    &mut buffer[n_initial_bytes..],
+                    value,
+                )
+            });
+        }
+    }
+
+    mod nonzero {
+        use crate::implementations::{nonzeros, vec_eq};
+        use test::Bencher;
+
+        #[bench]
+        fn bench_random_sp(b: &mut Bencher) {
+            let vec = vec_eq(crate::data::RANDOM_SP.as_bytes(), b's');
+            let slice = test::black_box(&vec);
+            b.iter(|| nonzeros(slice));
+        }
+
+        #[bench]
+        fn bench_random_printable(b: &mut Bencher) {
+            let vec = vec_eq(crate::data::RANDOM_PRINTABLE.as_bytes(), b's');
+            let slice = test::black_box(&vec);
+            b.iter(|| nonzeros(slice));
+        }
+    }
 }
