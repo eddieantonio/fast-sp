@@ -4,3 +4,4 @@
 
 # Python stuff
 /.venv/
+__pycache__/
