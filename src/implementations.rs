@@ -104,9 +104,11 @@ pub fn vec_eq(s: &[u8], value: u8) -> Vec<bool> {
 
 #[inline(never)]
 pub fn vec_eq_simd(input: &[u8], value: u8) -> Vec<bool> {
+    const N: usize = 16;
+
     let mut buffer = Vec::<bool>::with_capacity(input.len());
 
-    let n_initial_bytes = input.len() % 16;
+    let n_initial_bytes = input.len() % N;
     for &byte in &input[..n_initial_bytes] {
         buffer.push(byte == value);
     }
@@ -116,7 +118,7 @@ pub fn vec_eq_simd(input: &[u8], value: u8) -> Vec<bool> {
         buffer.set_len(input.len());
     }
 
-    _vec_eq_fast(
+    _vec_eq_fast::<N>(
         &input[n_initial_bytes..],
         &mut buffer[n_initial_bytes..],
         value,
@@ -126,16 +128,20 @@ pub fn vec_eq_simd(input: &[u8], value: u8) -> Vec<bool> {
 }
 
 #[inline]
-fn _vec_eq_fast(input: &[u8], buffer: &mut [bool], value: u8) {
-    use std::simd::i8x16;
-    assert_eq!(input.len() % 16, 0);
+fn _vec_eq_fast<const N: usize>(input: &[u8], buffer: &mut [bool], value: u8)
+where
+    std::simd::LaneCount<N>: std::simd::SupportedLaneCount,
+{
+    use std::simd::Simd;
+
+    assert_eq!(input.len() % N, 0);
     assert_eq!(input.len(), buffer.len());
 
-    let one = i8x16::splat(1);
-    let value = u8x16::splat(value);
+    let one = Simd::<i8, N>::splat(1);
+    let value = Simd::<u8, N>::splat(value);
     let buffer = unsafe { std::mem::transmute::<&mut [bool], &mut [i8]>(buffer) };
-    for (output_chunk, input_chunk) in buffer.chunks_exact_mut(16).zip(input.chunks_exact(16)) {
-        let input_chunk = u8x16::from_slice(input_chunk);
+    for (output_chunk, input_chunk) in buffer.chunks_exact_mut(N).zip(input.chunks_exact(N)) {
+        let input_chunk = Simd::<u8, N>::from_slice(input_chunk);
         let result = input_chunk.simd_eq(value).to_int() & one;
         result.copy_to_slice(output_chunk);
     }
