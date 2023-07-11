@@ -58,18 +58,26 @@ L2 cache on the M1's performance cores (allegedly).
 
 Here's how fast various implementation strategies work on my machine.
 
-| Implementation     | Test case          |   Throughput |               Time per iteration |
-|:-------------------|:-------------------|-------------:|---------------------------------:|
-| `count_c_owen`     | `random_printable` |  1.481 GiB/s |   7,914,316 ns/iter ± 114,600 ns |
-| `count_c_owen`     | `random_sp`        |  0.278 GiB/s |  42,135,595 ns/iter ± 470,710 ns |
-| `count_c`          | `random_printable` |  1.487 GiB/s |   7,879,081 ns/iter ±  37,939 ns |
-| `count_c`          | `random_sp`        |  1.488 GiB/s |   7,874,466 ns/iter ±  37,050 ns |
-| `count_for_loop`   | `random_printable` |  1.484 GiB/s |   7,897,987 ns/iter ±  36,293 ns |
-| `count_for_loop`   | `random_sp`        |  1.484 GiB/s |   7,898,125 ns/iter ±  56,693 ns |
-| `count_iter`       | `random_printable` |  3.982 GiB/s |   2,943,228 ns/iter ±   8,661 ns |
-| `count_iter`       | `random_sp`        |  3.982 GiB/s |   2,943,151 ns/iter ± 163,748 ns |
-| `count_simd`       | `random_printable` | 19.928 GiB/s |     588,045 ns/iter ±   3,013 ns |
-| `count_simd`       | `random_sp`        | 19.926 GiB/s |     588,108 ns/iter ±   5,438 ns |
+| Language   | Implementation   | Test case         |  Throughput (GiB/s) |                   Time per iteration |
+|:-----------|:-----------------|:------------------|--------------------:|-------------------------------------:|
+| Rust       | portable\_simd   | random\_sp        |              19.874 |        589,654 ns/iter ±       5,769 |
+| Rust       | portable\_simd   | random\_printable |              19.870 |        589,766 ns/iter ±       5,726 |
+| Python     | numpy            | random\_printable |               5.800 |      2,020,549 ns/iter ±      28,156 |
+| Python     | numpy            | random\_sp        |               5.711 |      2,052,063 ns/iter ±     113,433 |
+| Rust       | iter             | random\_printable |               3.979 |      2,944,916 ns/iter ±      80,495 |
+| Rust       | iter             | random\_sp        |               3.978 |      2,946,037 ns/iter ±      33,849 |
+| Rust       | emulate\_numpy   | random\_sp        |               3.031 |      3,866,700 ns/iter ±     116,109 |
+| Rust       | emulate\_numpy   | random\_printable |               3.026 |      3,872,550 ns/iter ±     103,355 |
+| C          | while\_loop      | random\_printable |               1.487 |      7,878,845 ns/iter ±     105,742 |
+| C          | while\_loop      | random\_sp        |               1.486 |      7,886,922 ns/iter ±     158,662 |
+| C          | for\_loop        | random\_sp        |               1.482 |      7,905,779 ns/iter ±      40,898 |
+| Rust       | for\_loop        | random\_sp        |               1.482 |      7,906,754 ns/iter ±     635,075 |
+| Rust       | for\_loop        | random\_printable |               1.481 |      7,912,558 ns/iter ±     499,821 |
+| C          | original         | random\_printable |               1.478 |      7,930,400 ns/iter ±     135,758 |
+| C          | for\_loop        | random\_printable |               1.478 |      7,931,450 ns/iter ±     516,610 |
+| C          | original         | random\_sp        |               0.278 |     42,119,291 ns/iter ±     501,957 |
+| Python     | for\_loop        | random\_printable |               0.001 | 18,939,466,916 ns/iter ±  44,605,333 |
+| Python     | for\_loop        | random\_sp        |               0.001 | 19,451,341,325 ns/iter ± 291,675,532 |
 
 # Analysis
 

@@ -97,7 +97,7 @@ def print_measurement(fn: str, test_case: str, measurement: Measurement):
     "Print measurements in a manner similar to cargo bench"
     mean_time = int(as_nanos(measurement.mean_time))
     stddev = int(as_nanos(measurement.fake_stddev))
-    print(f"test {fn}::{test_case} ... bench: {mean_time} ns/iter (+/- {stddev})")
+    print(f"test {fn}::{test_case} ... bench: {mean_time:,} ns/iter (+/- {stddev:,})")
 
 
 def time(stmt: str, **kwargs) -> Measurement:
