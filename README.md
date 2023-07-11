@@ -10,15 +10,13 @@ To run this, you will need **Rust Nightly** and **Python 3.8+** with **numpy**.
 
 <details>
 <summary>Rust (nightly)</summary>
-Use [rustup][] to install a Rust toolchain, then install a nightly
+Use [rustup](https://www.rust-lang.org/tools/install) to install a Rust toolchain, then install a nightly
 toolchain:
 
     rustup update -- nightly
 
 Then run `rustup override set nightly` to use the Rust nightly in the
 current directory.
-
-[rustup]: https://www.rust-lang.org/tools/install
 
 </details>
 
@@ -56,7 +54,7 @@ There were two test cases that I used:
 I chose 12 MiB as the size of the test data, as that is the size of the
 L2 cache on the M1's performance cores (allegedly).
 
-Here's how fast various implementation strategies work on my machine.
+Here's how fast various implementation strategies work on my machine (from fastest to slowest):
 
 | Language   | Implementation   | Test case         |  Throughput (GiB/s) |                   Time per iteration |
 |:-----------|:-----------------|:------------------|--------------------:|-------------------------------------:|
