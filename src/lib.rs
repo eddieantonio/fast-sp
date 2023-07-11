@@ -55,36 +55,36 @@ mod tests {
         };
     }
 
-    test_implementation!(count_iter);
-    test_implementation!(count_for_loop);
-    test_implementation!(count_c);
-    test_implementation!(count_simd);
-    test_implementation!(count_c_owen);
-    test_implementation!(count_c_owen_sized);
-    test_implementation!(emulate_numpy);
+    test_implementation!(c_original);
+    test_implementation!(c_for_loop);
+    test_implementation!(c_while_loop);
+    test_implementation!(rust_emulate_numpy);
+    test_implementation!(rust_for_loop);
+    test_implementation!(rust_iter);
+    test_implementation!(rust_portable_simd);
 
     #[test]
     fn test_implementations_have_identical_results_only_sp() {
         let buffer = CString::new(data::RANDOM_SP).unwrap();
         let sentence = buffer.as_c_str();
-        let count_from_iter = count_for_loop(sentence);
+        let count_from_iter = rust_for_loop(sentence);
 
-        assert_eq!(count_from_iter, count_iter(sentence));
-        assert_eq!(count_from_iter, count_c(sentence));
-        assert_eq!(count_from_iter, count_simd(sentence));
-        assert_eq!(count_from_iter, emulate_numpy(sentence));
+        assert_eq!(count_from_iter, rust_iter(sentence));
+        assert_eq!(count_from_iter, rust_portable_simd(sentence));
+        assert_eq!(count_from_iter, c_while_loop(sentence));
+        assert_eq!(count_from_iter, rust_emulate_numpy(sentence));
     }
 
     #[test]
     fn test_implementations_have_identical_results_any_printable() {
         let sentence = CString::new(data::RANDOM_PRINTABLE).unwrap();
         let sentence = sentence.as_c_str();
-        let count_from_iter = count_for_loop(sentence);
+        let count_from_iter = rust_for_loop(sentence);
 
-        assert_eq!(count_from_iter, count_iter(sentence));
-        assert_eq!(count_from_iter, count_c(sentence));
-        assert_eq!(count_from_iter, count_simd(sentence));
-        assert_eq!(count_from_iter, emulate_numpy(sentence));
+        assert_eq!(count_from_iter, rust_iter(sentence));
+        assert_eq!(count_from_iter, rust_portable_simd(sentence));
+        assert_eq!(count_from_iter, c_while_loop(sentence));
+        assert_eq!(count_from_iter, rust_emulate_numpy(sentence));
     }
 }
 
@@ -137,18 +137,19 @@ mod benches {
         };
     }
 
-    //bench_implementation!(count_iter);
-    //bench_implementation!(count_for_loop);
-    //bench_implementation!(count_c);
-    bench_implementation!(count_simd);
-    //bench_implementation!(count_c_owen);
-    //bench_implementation!(count_c_owen_sized);
-    //bench_implementation!(emulate_numpy);
+    bench_implementation!(c_original);
+    bench_implementation!(c_for_loop);
+    bench_implementation!(c_while_loop);
+    bench_implementation!(rust_emulate_numpy);
+    bench_implementation!(rust_for_loop);
+    bench_implementation!(rust_iter);
+    bench_implementation!(rust_portable_simd);
 
     bench_vec_eq_implementation!(vec_eq);
     bench_vec_eq_implementation!(vec_eq_simd);
     bench_vec_eq_implementation!(vec_eq_do_nothing_but_allocate);
     bench_vec_eq_implementation!(vec_eq_only_prefix);
+
     mod vec_eq_only_simd {
         use crate::implementations::vec_eq_only_simd;
         use test::Bencher;

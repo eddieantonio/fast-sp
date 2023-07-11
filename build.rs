@@ -22,16 +22,24 @@ fn main() {
 }
 
 fn compile_c_library() {
-    let source = "src/count.c";
+    let sources = [
+        "c/original.c",
+        "c/while-not-zero.c",
+        "c/with-explicit-size.c",
+    ];
+
     cc::Build::new()
-        .file(source)
         .flag(if cfg!(all(target_os = "macos", target_arch = "aarch64")) {
             "-mcpu=apple-m1"
         } else {
             "-march=native"
         })
+        .files(sources)
         .compile("libcount.a");
-    println!("cargo:rerun-if-changed={source}");
+
+    for source in sources {
+        println!("cargo:rerun-if-changed={source}");
+    }
 }
 
 fn generate_test_data() {
