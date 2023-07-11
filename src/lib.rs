@@ -116,29 +116,35 @@ mod benches {
         };
     }
 
-    bench_implementation!(count_iter);
-    bench_implementation!(count_for_loop);
+    macro_rules! bench_vec_eq_implementation {
+        ($implementation: ident) => {
+            mod $implementation {
+
+                use test::Bencher;
+
+                #[bench]
+                fn bench_random_sp(b: &mut Bencher) {
+                    let sentence = test::black_box(crate::data::RANDOM_SP.as_bytes());
+                    b.iter(|| crate::implementations::$implementation(sentence, b's'));
+                }
+
+                #[bench]
+                fn bench_random_printable(b: &mut Bencher) {
+                    let sentence = test::black_box(crate::data::RANDOM_PRINTABLE.as_bytes());
+                    b.iter(|| crate::implementations::$implementation(sentence, b's'));
+                }
+            }
+        };
+    }
+
+    //bench_implementation!(count_iter);
+    //bench_implementation!(count_for_loop);
     bench_implementation!(count_c);
     bench_implementation!(count_simd);
-    bench_implementation!(count_c_owen);
-    bench_implementation!(count_c_owen_sized);
-    bench_implementation!(emulate_numpy);
-
-    mod veq_eq {
-        use test::Bencher;
-
-        #[bench]
-        fn bench_random_sp(b: &mut Bencher) {
-            let sentence = test::black_box(crate::data::RANDOM_SP.as_bytes());
-            b.iter(|| crate::implementations::vec_eq(sentence, b's'));
-        }
-
-        #[bench]
-        fn bench_random_printable(b: &mut Bencher) {
-            let sentence = test::black_box(crate::data::RANDOM_PRINTABLE.as_bytes());
-            b.iter(|| crate::implementations::vec_eq(sentence, b's'));
-        }
-    }
+    //bench_implementation!(count_c_owen);
+    //bench_implementation!(count_c_owen_sized);
+    //bench_implementation!(emulate_numpy);
+    bench_vec_eq_implementation!(vec_eq_simd);
 
     mod nonzero {
         use crate::implementations::{nonzeros, vec_eq};
