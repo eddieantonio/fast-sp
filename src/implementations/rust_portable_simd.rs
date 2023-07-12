@@ -18,7 +18,7 @@ use std::simd::{u8x16, SimdInt, SimdPartialEq};
 
 /// Counts using portable_simd.
 ///
-/// See assembly in Compiler Explorer: <https://godbolt.org/z/vzjbojYna>
+/// See assembly in Compiler Explorer: <https://godbolt.org/z/TPj7KTsaY>
 pub fn rust_portable_simd(s: &CStr) -> isize {
     let bytes = s.to_bytes();
     let (prefix, middle, suffix) = bytes.as_simd();
@@ -28,10 +28,8 @@ pub fn rust_portable_simd(s: &CStr) -> isize {
 
     let mut result = 0;
     for &window in middle {
-        let ss = window.simd_eq(s);
-        let ps = window.simd_eq(p);
-        let neg_ss = ss.to_int();
-        let neg_ps = ps.to_int();
+        let neg_ss = window.simd_eq(s).to_int();
+        let neg_ps = window.simd_eq(p).to_int();
         let pairwise = neg_ps - neg_ss;
 
         result += pairwise.reduce_sum() as isize;
