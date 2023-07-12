@@ -21,10 +21,10 @@ current directory.
 </details>
 
 <details>
-<summary>Python 3.8+ with numpy</summary>
-The test cases were generated using numpy shenanigans.
+<summary>Python 3.8+ with NumPy</summary>
+The test cases were generated using NumPy shenanigans.
 
-You probably want to create a virtual environment, and install numpy
+You probably want to create a virtual environment, and install NumPy
 inside it. Here's one way to do it:
 
     python3 -m venv .venv
@@ -33,14 +33,47 @@ inside it. Here's one way to do it:
 
 </details>
 
+# Running the benchmarks
+
+**Note**: the `cargo bench` **must** be run before profiling Python (I'm
+sorry).
+
+Benchmark C and Rust:
+
+    cargo bench
+
+Benchmark Python (ensure NumPy is installed):
+
+    python3 python/benchmark-python.py
+
+## "Data analysis"
+
+If you want to try analyzing results, you will need to install
+additional Python packages. In your virtual environment, run this:
+
+    python3 -m pip install -r requirements-dev.txt
+
+This was really janky. So I just copy-pasted the output from the
+benchmarks straight from my terminal into a file called `output.txt`,
+but I guess you can do this:
+
+    cargo bench | tee output.txt &&\
+      python3 python/benchmark-python.py | tee -a output.txt
+
+And then run the script to parse this file:
+
+   python3 ./analyze-data-from-cargo-bench-output.py output.txt
+
 # Implementations
 
- - `count_owen_c` — the original implementation from the [blog post][blog].
- - `count_c` — a straightforward C implementation.
- - `count_for_loop` — a Rust implementation that uses a `for` loop and
-   mutable state.
- - `count_iter` — a Rust implementation that uses iterators.
- - `count_simd` — a Rust implementation that uses [Portable SIMD][].
+ - `c_original` — the original implementation from the [blog post][blog].
+ - `c_for_loop` — a straightforward C implementation, with buffer size given (no need to find the null-terminator).
+ - `c_while_loop` — a slight variation on the original.
+ - `rust_for_loop` — a Rust implementation that uses a `for` loop and mutable state.
+ - `rust_iter` — a Rust implementation that uses a `for` loop and mutable state.
+ - `rust_simd` — a Rust implementation that uses [Portable SIMD][].
+ - `python_for_loop` — Python code to analyze buffer byte-by-byte.
+ - `python_numpy` — solution that uses NumPy.
 
 [Portable SIMD]: https://github.com/rust-lang/portable-simd
 
@@ -48,7 +81,7 @@ inside it. Here's one way to do it:
 
 There were two test cases that I used:
 
- - `random_printable`: 12 MiB of random printable ASCII characters. 
+ - `random_printable`: 12 MiB of random printable ASCII characters.
  - `random_sp`: 12 MiB of either the ASCII character `s` or `p`.
 
 I chose 12 MiB as the size of the test data, as that is the size of the
@@ -79,18 +112,18 @@ Here's how fast various implementation strategies work on my machine (from faste
 
 # Analysis
 
-**TODO!** Briefly, Clang generates code for `count_c_owen` that does all of its
+**TODO!** Briefly, Clang generates code for `c_original` that does all of its
 counting logic with branches, which is probably why it struggles with
-`random_sp` — the M1 just can't predict the branches. `count_c` and
-`count_for_loop` both yields assemly that uses the `cinc` and `csel`, avoiding
-costly unpredictable branches. Rust/LLVM is able to autovectorize `count_iter`
-but it generates a whole mess of instructions, and I haven't put the time to
-understand what the instructions are actually doing.
-For `count_simd`, Rust/LLVM generates nice SIMD code that processes 16 bytes at
-a time, in a tiny loop.
+`random_sp` — the M1 just can't predict the branches. `c_for_loop` and
+`rust_for_loop` both yields assembly that uses the `cinc` and `csel`, avoiding
+costly unpredictable branches. Rust/LLVM is able to autovectorize
+`rust_iter` but it generates a whole mess of instructions, and I haven't
+put the time to understand what the instructions are actually doing. For
+`rust_simd`, Rust/LLVM generates nice SIMD code that processes 16 bytes
+at a time, in a tiny loop.
 
 Details of my testing machine
- - Apple MacBook Pro M1, 2020. 
+ - Apple MacBook Pro M1, 2020.
  - RAM: 8 GB
  - Max Clock speed: 3.2 GHz
  - L2 cache: 12 MB
