@@ -81,7 +81,10 @@ def add_bytes_per_second(df):
 
 
 def add_gigabytes_per_second(df):
-    return df.assign(gigabytes_per_second=df["bytes_per_second"] / 1024**3)
+    return df.assign(
+        gigabytes_per_second=df["bytes_per_second"] / 1024**3,
+        megabytes_per_second=df["bytes_per_second"] / 1024**2,
+    )
 
 
 def add_language_and_name(df):
@@ -124,6 +127,18 @@ def nullify_test_case_size_conditionally(df):
     )
 
 
+def add_minimum_time(df):
+    """
+    The minimum time for the Python tests is easy -- for those, I created the "fake
+    standard devation" by simply taking the minimum. I'm not really sure what cargo
+    bench means when it says 123,456 ns/iter (+/- 789). I'm interpreting that as a
+    something that resembles a standard devation? But maybe it's the absolute difference
+    of the largest deviation? Well, I'm just going to pretend that subtracting it from
+    the "mean" yields the minimum runtime. I hope.
+    """
+    return df.assign(min_runtime=df["mean_ns"] - df["stddev_ns"])
+
+
 ######################################### Main #########################################
 
 rows = parse(fileinput.input(encoding="UTF-8"))
@@ -136,6 +151,7 @@ benchmarks = (
     .pipe(nullify_test_case_size_conditionally)
     .pipe(add_bytes_per_second)
     .pipe(add_gigabytes_per_second)
+    .pipe(add_minimum_time)
 )
 
 
@@ -163,6 +179,9 @@ def with_preformatted_time(df):
     return df.assign(time=pd.Series(format_row()))
 
 
+# Use either "blogpost" or "readme"
+mode = "blog post"
+
 presentable = (
     benchmarks.query("category == 'Full'")
     .sort_values("mean_ns")
@@ -175,7 +194,8 @@ presentable = (
             "name",
             "test_case",
             "gigabytes_per_second",
-            "time",
+            "megabytes_per_second",
+            "time" if mode == "blogpost" else "min_runtime",
         ]
     )
 )
@@ -188,9 +208,10 @@ print(
             "Implementation",
             "Test case",
             "Throughput (GiB/s)",
+            "Throughput (MiB/s)",
             "Time per iteration",
         ],
-        colalign=["left", "left", "left", "right", "right"],
+        colalign=["left", "left", "left", "right", "right", "right"],
         index=False,
         floatfmt=".3f",
         intfmt=",",
