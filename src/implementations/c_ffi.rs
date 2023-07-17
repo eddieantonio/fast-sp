@@ -13,87 +13,64 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-use std::ffi::CStr;
+use std::ffi::{c_char, CStr};
 
-/// Count implementation written in C. See src/count.c
-#[inline(always)]
-pub fn c_while_loop(s: &CStr) -> isize {
-    // Tiny wrapper that changes Rust's borrowed CStr and converts it into C's const char*.
-    use std::ffi::c_char;
+macro_rules! define_ffi {
+    ($(#[$meta:meta])* $name: ident => $link_name: ident) => {
+        $(#[$meta])*
+        #[inline(always)]
+        pub fn $name(s: &CStr) -> isize {
+            // Tiny wrapper that changes Rust's borrowed CStr and converts it into C's const char*.
+            // This will link to libcount.a and use its count_c function.
+            // The scope of this external symbol is entirely internal to this function.
+            #[link(name = "count", kind = "static")]
+            extern "C" {
+                fn $link_name(s: *const c_char) -> isize;
+            }
 
-    // This will link to libcount.a and use its count_c function.
-    // The scope of this external symbol is entirely internal to this function.
-    #[link(name = "count", kind = "static")]
-    extern "C" {
-        fn while_not_zero(s: *const c_char) -> isize;
-    }
+            unsafe { $link_name(s.as_ptr()) }
+        }
+    };
 
-    unsafe { while_not_zero(s.as_ptr()) }
+    ($(#[$meta:meta])* $name: ident => $link_name: ident usize) => {
+        $(#[$meta])*
+        #[inline(always)]
+        pub fn $name(s: &CStr) -> isize {
+            // Tiny wrapper that changes Rust's borrowed CStr and converts it into C's const char*.
+            // This will link to libcount.a and use its count_c function.
+            // The scope of this external symbol is entirely internal to this function.
+            #[link(name = "count", kind = "static")]
+            extern "C" {
+                fn $link_name(s: *const c_char, n: usize) -> i32;
+            }
+
+            let s = s.to_bytes();
+            unsafe { $link_name(s.as_ptr() as *const c_char, s.len()) as isize }
+        }
+    };
 }
 
-/// Owen's original implementation written in C. See src/count.c
-#[inline(always)]
-pub fn c_original(s: &CStr) -> isize {
-    // Tiny wrapper that changes Rust's borrowed CStr and converts it into C's const char*.
-    use std::ffi::c_char;
+define_ffi!(
+    /// Count implementation written in C. See src/count.c
+    c_while_loop => while_not_zero
+);
 
-    // This will link to libcount.a and use its count_c function.
-    // The scope of this external symbol is entirely internal to this function.
-    #[link(name = "count", kind = "static")]
-    extern "C" {
-        fn run_switches(s: *const c_char) -> i32;
-    }
+define_ffi!(
+    /// Owen's original implementation written in C. See src/count.c
+    c_original => run_switches
+);
 
-    unsafe { run_switches(s.as_ptr()) as isize }
-}
+define_ffi!(
+    /// Owen's implementation, with explicit size (does not check for null terminator).
+    c_for_loop => with_explicit_size usize
+);
 
-/// Owen's implementation, with explicit size (does not check for null terminator).
-#[inline(always)]
-pub fn c_for_loop(s: &CStr) -> isize {
-    // Tiny wrapper that changes Rust's borrowed CStr and converts it into C's const char*.
-    use std::ffi::c_char;
+define_ffi!(
+    /// Using a state machine approach from <https://github.com/robertdavidgraham/wc2>
+    c_state_machine => c_state_machine usize
+);
 
-    // This will link to libcount.a and use its count_c function.
-    // The scope of this external symbol is entirely internal to this function.
-    #[link(name = "count", kind = "static")]
-    extern "C" {
-        fn with_explicit_size(s: *const c_char, n: usize) -> i32;
-    }
-
-    let s = s.to_bytes();
-    unsafe { with_explicit_size(s.as_ptr() as *const c_char, s.len()) as isize }
-}
-
-/// Using a state machine approach from <https://github.com/robertdavidgraham/wc2>
-#[inline(always)]
-pub fn c_state_machine(s: &CStr) -> isize {
-    // Tiny wrapper that changes Rust's borrowed CStr and converts it into C's const char*.
-    use std::ffi::c_char;
-
-    // This will link to libcount.a and use its count_c function.
-    // The scope of this external symbol is entirely internal to this function.
-    #[link(name = "count", kind = "static")]
-    extern "C" {
-        fn c_state_machine(s: *const c_char, n: usize) -> i32;
-    }
-
-    let s = s.to_bytes();
-    unsafe { c_state_machine(s.as_ptr() as *const c_char, s.len()) as isize }
-}
-
-/// Like the state machine approach above, but without the state machine.
-#[inline(always)]
-pub fn c_count_machine(s: &CStr) -> isize {
-    // Tiny wrapper that changes Rust's borrowed CStr and converts it into C's const char*.
-    use std::ffi::c_char;
-
-    // This will link to libcount.a and use its count_c function.
-    // The scope of this external symbol is entirely internal to this function.
-    #[link(name = "count", kind = "static")]
-    extern "C" {
-        fn c_count_machine(s: *const c_char, n: usize) -> i32;
-    }
-
-    let s = s.to_bytes();
-    unsafe { c_count_machine(s.as_ptr() as *const c_char, s.len()) as isize }
-}
+define_ffi!(
+    /// Like the [c_state_machine], but without the state machine.
+    c_count_machine => c_count_machine usize
+);
