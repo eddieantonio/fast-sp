@@ -63,3 +63,37 @@ pub fn c_for_loop(s: &CStr) -> isize {
     let s = s.to_bytes();
     unsafe { with_explicit_size(s.as_ptr() as *const c_char, s.len()) as isize }
 }
+
+/// Using a state machine approach from <https://github.com/robertdavidgraham/wc2>
+#[inline(always)]
+pub fn c_state_machine(s: &CStr) -> isize {
+    // Tiny wrapper that changes Rust's borrowed CStr and converts it into C's const char*.
+    use std::ffi::c_char;
+
+    // This will link to libcount.a and use its count_c function.
+    // The scope of this external symbol is entirely internal to this function.
+    #[link(name = "count", kind = "static")]
+    extern "C" {
+        fn c_state_machine(s: *const c_char, n: usize) -> i32;
+    }
+
+    let s = s.to_bytes();
+    unsafe { c_state_machine(s.as_ptr() as *const c_char, s.len()) as isize }
+}
+
+/// Like the state machine approach above, but without the state machine.
+#[inline(always)]
+pub fn c_count_machine(s: &CStr) -> isize {
+    // Tiny wrapper that changes Rust's borrowed CStr and converts it into C's const char*.
+    use std::ffi::c_char;
+
+    // This will link to libcount.a and use its count_c function.
+    // The scope of this external symbol is entirely internal to this function.
+    #[link(name = "count", kind = "static")]
+    extern "C" {
+        fn c_count_machine(s: *const c_char, n: usize) -> i32;
+    }
+
+    let s = s.to_bytes();
+    unsafe { c_count_machine(s.as_ptr() as *const c_char, s.len()) as isize }
+}

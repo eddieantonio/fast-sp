@@ -62,6 +62,8 @@ mod tests {
     test_implementation!(rust_for_loop);
     test_implementation!(rust_iter);
     test_implementation!(rust_portable_simd);
+    test_implementation!(c_state_machine);
+    test_implementation!(c_count_machine);
 
     #[test]
     fn test_implementations_have_identical_results_only_sp() {
@@ -73,6 +75,8 @@ mod tests {
         assert_eq!(count_from_iter, rust_portable_simd(sentence));
         assert_eq!(count_from_iter, c_while_loop(sentence));
         assert_eq!(count_from_iter, rust_emulate_numpy(sentence));
+        assert_eq!(count_from_iter, c_state_machine(sentence));
+        assert_eq!(count_from_iter, c_count_machine(sentence));
     }
 
     #[test]
@@ -85,6 +89,8 @@ mod tests {
         assert_eq!(count_from_iter, rust_portable_simd(sentence));
         assert_eq!(count_from_iter, c_while_loop(sentence));
         assert_eq!(count_from_iter, rust_emulate_numpy(sentence));
+        assert_eq!(count_from_iter, c_state_machine(sentence));
+        assert_eq!(count_from_iter, c_count_machine(sentence));
     }
 }
 
@@ -144,6 +150,8 @@ mod benches {
     bench_implementation!(rust_for_loop);
     bench_implementation!(rust_iter);
     bench_implementation!(rust_portable_simd);
+    bench_implementation!(c_state_machine);
+    bench_implementation!(c_count_machine);
 
     bench_vec_eq_implementation!(vec_eq);
     bench_vec_eq_implementation!(vec_eq_simd);

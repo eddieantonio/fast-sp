@@ -26,6 +26,8 @@ fn compile_c_library() {
         "c/original.c",
         "c/while-not-zero.c",
         "c/with-explicit-size.c",
+        "c/state-machine.c",
+        "c/count-machine.c",
     ];
 
     cc::Build::new()
